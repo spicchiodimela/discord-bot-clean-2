@@ -1,7 +1,9 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, Events } = require('discord.js');
+const fs = require('fs');
 const http = require('http');
 
+// ===========================================
 // Array di frasi per /lyrics
 const lyrics = [
   "Its gettin late, Im making my way over to my favorite place",
@@ -22,6 +24,7 @@ const lyrics = [
   "Everybody on the floor, let me show you how we do"
 ];
 
+// ===========================================
 // Array di catchphrase delle Winx
 const winxPhrases = [
   "Showtime, girls!",
@@ -35,7 +38,8 @@ const winxPhrases = [
   "Im a PRINCESS, so I dont clean"
 ];
 
-// Creazione del client
+// ===========================================
+// Client Discord
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -44,11 +48,28 @@ const client = new Client({
   ]
 });
 
-// Quando il bot è online
+// ===========================================
+// File rounds.json
+let rounds = [];
+const roundsFile = './rounds.json';
+if (fs.existsSync(roundsFile)) {
+  rounds = JSON.parse(fs.readFileSync(roundsFile, 'utf-8'));
+}
+
+// ===========================================
+// Config server (sostituisci con i tuoi ID)
+const guildID = '1365361537732182088';
+const submissionsChannelID = '1405971298580041780';
+const ruoloPartecipantiID = '1405592912670232606';
+
+// ===========================================
+// Quando il bot è pronto
 client.once('ready', () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
+  startDeadlineCheck(); // Avvia controllo deadline
 });
 
+// ===========================================
 // Comando !ping
 client.on('messageCreate', message => {
   if (message.author.bot) return;
@@ -57,32 +78,95 @@ client.on('messageCreate', message => {
   }
 });
 
-// Comando slash
+// ===========================================
+// Comandi slash
 client.on(Events.InteractionCreate, async interaction => {
   if (!interaction.isChatInputCommand()) return;
 
+  // /lyrics
   if (interaction.commandName === 'lyrics') {
     const frase = lyrics[Math.floor(Math.random() * lyrics.length)];
     await interaction.reply(frase);
   }
 
+  // /winx
   if (interaction.commandName === 'winx') {
     const frase = winxPhrases[Math.floor(Math.random() * winxPhrases.length)];
     await interaction.reply(frase);
   }
+
+  // /deadline
+  if (interaction.commandName === 'deadline') {
+    const roundName = interaction.options.getString('round');
+    const deadlineInput = interaction.options.getString('deadline');
+    const deadlineDate = new Date(deadlineInput);
+
+    if (isNaN(deadlineDate)) {
+      await interaction.reply('Formato data non valido. Usa YYYY-MM-DD HH:MM');
+      return;
+    }
+
+    // Salva in memoria
+    rounds.push({ roundName, deadline: deadlineDate.toISOString() });
+    // Salva su file JSON
+    fs.writeFileSync(roundsFile, JSON.stringify(rounds, null, 2));
+
+    await interaction.reply(`✅ Deadline per "${roundName}" salvata per ${deadlineDate.toUTCString()}`);
+  }
 });
 
-// Connessione con il token
+// ===========================================
+// Funzione controllo deadline e reminder
+function startDeadlineCheck() {
+  const checkInterval = 60 * 60 * 1000; // ogni ora
+
+  setInterval(async () => {
+    const now = new Date();
+
+    for (const round of rounds) {
+      const diff = new Date(round.deadline) - now;
+
+      // Reminder 24 ore prima
+      if (diff <= 24*60*60*1000 && diff > 23.5*60*60*1000) {
+        const guild = client.guilds.cache.get(guildID);
+        if (!guild) continue;
+
+        const channel = guild.channels.cache.get(submissionsChannelID);
+        if (!channel) continue;
+
+        const roleMembers = guild.roles.cache.get(ruoloPartecipantiID).members;
+
+        // Recupera ultimi 9 messaggi dal canale
+        const messages = await channel.messages.fetch({ limit: 9 });
+
+        // Filtra chi non ha inviato
+        const membersWithoutSubmission = roleMembers.filter(member => {
+          return !messages.some(msg => msg.author.id === member.id);
+        });
+
+        // Prepara il messaggio
+        let msg = `<@&${ruoloPartecipantiID}> ⚠️ 24 hours left! ${round.roundName}!`;
+        if (membersWithoutSubmission.size > 0) {
+          const mentions = membersWithoutSubmission.map(m => `<@${m.id}>`).join(' ');
+          msg += `\nHaven't submitted yet: ${mentions}`;
+        }
+
+        channel.send(msg);
+      }
+    }
+  }, checkInterval);
+}
+
+// ===========================================
+// Connessione con token
 client.login(process.env.BOT_TOKEN);
 
 // ===========================================
 // Server HTTP finto per Render
 const PORT = process.env.PORT || 3000;
-
 http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.end('Bot online\n');
 }).listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
-
