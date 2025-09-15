@@ -64,12 +64,17 @@ const submissionsChannelID = '1405971298580041780';
 const ruoloPartecipantiID = '1405592912670232606';
 const hostRoleID = '1365390307440722082';
 const modRoleID = '1366925681782558781';
+const bumpChannelID = '1371148843785126078'; // <- sostituisci con ID reale del canale per il bump
 
 // ===========================================
 // Quando il bot è pronto
 client.once('ready', () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
   startDeadlineCheck(); // Avvia controllo deadline
+
+  // ===========================================
+  // Esecuzione automatica /bump ogni 2 ore
+  setInterval(autoBump, 2 * 60 * 60 * 1000); // ogni 2 ore
 });
 
 // ===========================================
@@ -206,6 +211,26 @@ function startDeadlineCheck() {
 }
 
 // ===========================================
+// Funzione per inviare /bump automaticamente
+async function autoBump() {
+  try {
+    const channel = await client.channels.fetch(bumpChannelID);
+    if (!channel) return console.log("❌ Canale bump non trovato!");
+
+    // Trova il bot di Disboard
+    const disboardBot = channel.guild.members.cache.find(
+      m => m.user.username.toLowerCase().includes("disboard")
+    );
+    if (!disboardBot) return console.log("❌ Bot di Disboard non trovato!");
+
+    await channel.send(`/bump <@${disboardBot.id}>`);
+    console.log("✅ Comand /bump sent!");
+  } catch (err) {
+    console.error("❌ Error sending /bump:", err);
+  }
+}
+
+// ===========================================
 // Connessione con token
 client.login(process.env.BOT_TOKEN);
 
@@ -218,4 +243,3 @@ http.createServer((req, res) => {
 }).listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
-
