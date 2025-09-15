@@ -11,31 +11,30 @@ const commands = [
     .setName('winx')
     .setDescription('Random quote from Winx'),
 
-  // Nuovo comando /deadline
   new SlashCommandBuilder()
     .setName('deadline')
-    .setDescription('Set a deadline')
+    .setDescription('Set a deadline for a round (EST timezone)')
     .addStringOption(option =>
       option.setName('round')
-        .setDescription('Round name')
+        .setDescription('Name of the round')
         .setRequired(true))
     .addStringOption(option =>
       option.setName('deadline')
-        .setDescription('Deadline date (formato: YYYY-MM-DD HH:MM, UTC)')
+        .setDescription('Deadline date (YYYY-MM-DD HH:MM, EST)')
         .setRequired(true))
 ].map(cmd => cmd.toJSON());
 
-// Setup REST per registrare i comandi
+// Setup REST per registrare comandi
 const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
 
 (async () => {
   try {
-    console.log('🔄 Registrazione comandi...');
+    console.log('🔄 Registering commands...');
     await rest.put(
       Routes.applicationCommands(process.env.CLIENT_ID),
       { body: commands }
     );
-    console.log('✅ Comandi registrati!');
+    console.log('✅ Commands registered!');
   } catch (error) {
     console.error(error);
   }

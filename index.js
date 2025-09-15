@@ -2,6 +2,7 @@ require('dotenv').config();
 const { Client, GatewayIntentBits, Events } = require('discord.js');
 const fs = require('fs');
 const http = require('http');
+const moment = require('moment-timezone'); // <-- importante
 
 // ===========================================
 // Array di frasi per /lyrics
@@ -24,7 +25,6 @@ const lyrics = [
   "Everybody on the floor, let me show you how we do"
 ];
 
-// ===========================================
 // Array di catchphrase delle Winx
 const winxPhrases = [
   "Showtime, girls!",
@@ -99,19 +99,20 @@ client.on(Events.InteractionCreate, async interaction => {
   if (interaction.commandName === 'deadline') {
     const roundName = interaction.options.getString('round');
     const deadlineInput = interaction.options.getString('deadline');
-    const deadlineDate = new Date(deadlineInput);
 
-    if (isNaN(deadlineDate)) {
-      await interaction.reply('❌ Formato data non valido.\nUsa il formato **YYYY-MM-DDTHH:MM** (esempio: 2025-09-16T12:00)');
+    // Parse input in EST
+    const deadlineDate = moment.tz(deadlineInput, "YYYY-MM-DD HH:mm", "America/New_York");
+
+    if (!deadlineDate.isValid()) {
+      await interaction.reply("❌ Invalid date format. Use YYYY-MM-DD HH:MM (EST timezone).");
       return;
     }
 
-    // Salva in memoria
-    rounds.push({ roundName, deadline: deadlineDate.toISOString() });
-    // Salva su file JSON
+    // Salva in UTC
+    rounds.push({ roundName, deadline: deadlineDate.toDate().toISOString() });
     fs.writeFileSync(roundsFile, JSON.stringify(rounds, null, 2));
 
-    await interaction.reply(`✅ Deadline per "${roundName}" salvata per ${deadlineDate.toUTCString()}`);
+    await interaction.reply(`✅ Deadline for "${roundName}" set to ${deadlineDate.format("MMMM Do YYYY, h:mm A z")} (EST)`);
   }
 });
 
@@ -136,8 +137,8 @@ function startDeadlineCheck() {
 
         const roleMembers = guild.roles.cache.get(ruoloPartecipantiID).members;
 
-        // Recupera ultimi 100 messaggi dal canale
-        const messages = await channel.messages.fetch({ limit: 100 });
+        // Recupera ultimi 9 messaggi dal canale
+        const messages = await channel.messages.fetch({ limit: 9 });
 
         // Filtra chi non ha inviato
         const membersWithoutSubmission = roleMembers.filter(member => {
@@ -145,10 +146,10 @@ function startDeadlineCheck() {
         });
 
         // Prepara il messaggio
-        let msg = `<@&${1405592912670232606}> ⚠️ 24 hours left! ${round.roundName}!`;
+        let msg = `<@&${ruoloPartecipantiID}> ⚠️ Only 24 hours left for **${round.roundName}**!`;
         if (membersWithoutSubmission.size > 0) {
           const mentions = membersWithoutSubmission.map(m => `<@${m.id}>`).join(' ');
-          msg += `\nHavent submitted yet: ${mentions}`;
+          msg += `\nThese members haven't submitted yet: ${mentions}`;
         }
 
         channel.send(msg);
