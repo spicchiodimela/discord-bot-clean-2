@@ -23,7 +23,7 @@ const lyrics = [
 ];
 
 // Array di catchphrase delle Winx
-const winx = [
+const winxPhrases = [
   "Showtime, girls!",
   "What did you do, comb your hair with an egg beater?",
   "Come on you idiots! Do what Musa says!",
