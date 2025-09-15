@@ -1,5 +1,6 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, Events } = require('discord.js');
+const http = require('http');
 
 // Array di frasi per /lyrics
 const lyrics = [
@@ -19,6 +20,19 @@ const lyrics = [
   "So, I put my hands up, They re playing my song, the butterflies fly away",
   "Just dance, spin that record, babe",
   "Everybody on the floor, let me show you how we do"
+];
+
+// Array di catchphrase delle Winx
+const winx = [
+  "Showtime, girls!",
+  "What did you do, comb your hair with an egg beater?",
+  "Come on you idiots! Do what Musa says!",
+  "Yooo hooo, anyone here? This place is emptier than a mall on Monday",
+  "Not so fast, Romeo!",
+  "Chimera, for once in your life sht up!",
+  "Listen Stella, if you fall in the dark and twist your ankle, I am NOT gonna carry you",
+  "This is ridiculous, Brandon better buy me a dress to thank me for this",
+  "Im a PRINCESS, so I dont clean"
 ];
 
 // Creazione del client
@@ -43,12 +57,17 @@ client.on('messageCreate', message => {
   }
 });
 
-// Comando slash /lyrics
+// Comando slash
 client.on(Events.InteractionCreate, async interaction => {
   if (!interaction.isChatInputCommand()) return;
 
   if (interaction.commandName === 'lyrics') {
     const frase = lyrics[Math.floor(Math.random() * lyrics.length)];
+    await interaction.reply(frase);
+  }
+
+  if (interaction.commandName === 'winx') {
+    const frase = winxPhrases[Math.floor(Math.random() * winxPhrases.length)];
     await interaction.reply(frase);
   }
 });
@@ -58,8 +77,6 @@ client.login(process.env.BOT_TOKEN);
 
 // ===========================================
 // Server HTTP finto per Render
-const http = require('http');
-
 const PORT = process.env.PORT || 3000;
 
 http.createServer((req, res) => {
@@ -68,3 +85,4 @@ http.createServer((req, res) => {
 }).listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
+

@@ -4,7 +4,12 @@ const { REST, Routes, SlashCommandBuilder } = require('discord.js');
 const commands = [
   new SlashCommandBuilder()
     .setName('lyrics')
-    .setDescription('Random y2k songs lyrics')
+    .setDescription('Random y2k songs lyrics'),
+
+  // Nuovo comando /winx
+  new SlashCommandBuilder()
+    .setName('winx')
+    .setDescription('Random quote from Winx')
 ].map(cmd => cmd.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
