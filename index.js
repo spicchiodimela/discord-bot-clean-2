@@ -2,7 +2,7 @@ require('dotenv').config();
 const { Client, GatewayIntentBits, Events } = require('discord.js');
 const fs = require('fs');
 const http = require('http');
-const moment = require('moment-timezone'); // <-- importante
+const moment = require('moment-timezone'); // importante per fuso orario
 
 // ===========================================
 // Array di frasi per /lyrics
@@ -25,6 +25,7 @@ const lyrics = [
   "Everybody on the floor, let me show you how we do"
 ];
 
+// ===========================================
 // Array di catchphrase delle Winx
 const winxPhrases = [
   "Showtime, girls!",
@@ -61,6 +62,8 @@ if (fs.existsSync(roundsFile)) {
 const guildID = '1365361537732182088';
 const submissionsChannelID = '1405971298580041780';
 const ruoloPartecipantiID = '1405592912670232606';
+const hostRoleID = '1365390307440722082'; // sostituisci con Host reale
+const modRoleID = '1366925681782558781';   // sostituisci con Mod reale
 
 // ===========================================
 // Quando il bot è pronto
@@ -114,6 +117,35 @@ client.on(Events.InteractionCreate, async interaction => {
 
     await interaction.reply(`✅ Deadline for "${roundName}" set to ${deadlineDate.format("MMMM Do YYYY, h:mm A z")} (EST)`);
   }
+
+  // /randomtheme (Host & Mod only)
+  if (interaction.commandName === 'randomtheme') {
+    const memberRoles = interaction.member.roles.cache;
+    if (!memberRoles.has(hostRoleID) && !memberRoles.has(modRoleID)) {
+      await interaction.reply({ content: "❌ You don't have permission to use this command!", ephemeral: true });
+      return;
+    }
+
+    const themesFile = './themes.json';
+    let themes = [];
+    if (fs.existsSync(themesFile)) {
+      themes = JSON.parse(fs.readFileSync(themesFile, 'utf-8'));
+    } else {
+      themes = ["Glitch in the Matrix", "Nostalgialbums", "Mall Goth Revival", "Cyber Doll", "Sweet 16 Excess", "Zillennial Dreamcore", "Burned CD Love Letters", "Hannah Montana Core", "Bubble Pop Electric", "Frutiger subgenres", "Mean Girl Mayhem", "Bratz Baddie", "Myspace Mayhem", "Boyband Blizzard", "Lisa Frank fantasy", "Nibbles and Nostalgia", "Award Show Duos", "90s Supermodel off-duty", "VHS Glitch Glam", "Fresh Prince Realness", "Video Game Vixens", "Y2k Nightlife"];
+    }
+
+    if (themes.length === 0) {
+      await interaction.reply("⚠️ All themes have already been used!");
+      return;
+    }
+
+    // Pick random and remove from array
+    const index = Math.floor(Math.random() * themes.length);
+    const chosenTheme = themes.splice(index, 1)[0];
+    fs.writeFileSync(themesFile, JSON.stringify(themes, null, 2));
+
+    await interaction.reply(`🎉 Random theme selected: **${chosenTheme}**`);
+  }
 });
 
 // ===========================================
@@ -137,19 +169,16 @@ function startDeadlineCheck() {
 
         const roleMembers = guild.roles.cache.get(ruoloPartecipantiID).members;
 
-        // Recupera ultimi 9 messaggi dal canale
         const messages = await channel.messages.fetch({ limit: 9 });
 
-        // Filtra chi non ha inviato
         const membersWithoutSubmission = roleMembers.filter(member => {
           return !messages.some(msg => msg.author.id === member.id);
         });
 
-        // Prepara il messaggio
         let msg = `<@&${ruoloPartecipantiID}> ⚠️ Only 24 hours left for **${round.roundName}**!`;
         if (membersWithoutSubmission.size > 0) {
           const mentions = membersWithoutSubmission.map(m => `<@${m.id}>`).join(' ');
-          msg += `\nThese members haven't submitted yet: ${mentions}`;
+          msg += `\nThese members havent submitted yet: ${mentions}`;
         }
 
         channel.send(msg);
@@ -171,4 +200,3 @@ http.createServer((req, res) => {
 }).listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
-

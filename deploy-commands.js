@@ -1,5 +1,17 @@
 require('dotenv').config();
 const { REST, Routes, SlashCommandBuilder } = require('discord.js');
+const fs = require('fs');
+
+// Legge round e temi già salvati se esistono
+let rounds = [];
+if (fs.existsSync('./rounds.json')) {
+  rounds = JSON.parse(fs.readFileSync('./rounds.json', 'utf-8'));
+}
+
+let themes = [];
+if (fs.existsSync('./themes.json')) {
+  themes = JSON.parse(fs.readFileSync('./themes.json', 'utf-8'));
+}
 
 // Comandi del bot
 const commands = [
@@ -13,15 +25,19 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName('deadline')
-    .setDescription('Set a deadline for a round (EST timezone)')
+    .setDescription('Set a deadline')
     .addStringOption(option =>
       option.setName('round')
-        .setDescription('Name of the round')
+        .setDescription("Round name")
         .setRequired(true))
     .addStringOption(option =>
       option.setName('deadline')
-        .setDescription('Deadline date (YYYY-MM-DD HH:MM, EST)')
-        .setRequired(true))
+        .setDescription('Deadline date (YYYY-MM-DD HH:MM, UTC)')
+        .setRequired(true)),
+
+  new SlashCommandBuilder()
+    .setName('randomtheme')
+    .setDescription('Select a random theme for mini showdown')
 ].map(cmd => cmd.toJSON());
 
 // Setup REST per registrare comandi
@@ -29,12 +45,12 @@ const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
 
 (async () => {
   try {
-    console.log('🔄 Registering commands...');
+    console.log('🔄 Registrazione comandi...');
     await rest.put(
       Routes.applicationCommands(process.env.CLIENT_ID),
       { body: commands }
     );
-    console.log('✅ Commands registered!');
+    console.log('✅ Comandi registrati!');
   } catch (error) {
     console.error(error);
   }
