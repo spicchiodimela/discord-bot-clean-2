@@ -37,8 +37,12 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName('randomtheme')
-    .setDescription('Select a random theme for mini showdown')
-].map(cmd => cmd.toJSON());
+    .setDescription('Select a random theme for mini showdown'),
+
+  new SlashCommandBuilder()
+    .setName('rules')
+    .setDescription('Displays the server rules')
+].map(cmd => cmd.toJSON()); // <-- tutto incluso nell'array
 
 // Setup REST per registrare comandi
 const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
@@ -55,3 +59,4 @@ const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
     console.error(error);
   }
 })();
+

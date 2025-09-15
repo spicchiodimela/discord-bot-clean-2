@@ -1,5 +1,5 @@
-require('dotenv').config();
-const { Client, GatewayIntentBits, Events } = require('discord.js');
+require('dotenv').config(); 
+const { Client, GatewayIntentBits, Events, EmbedBuilder } = require('discord.js');
 const fs = require('fs');
 const http = require('http');
 const moment = require('moment-timezone'); // importante per fuso orario
@@ -62,8 +62,8 @@ if (fs.existsSync(roundsFile)) {
 const guildID = '1365361537732182088';
 const submissionsChannelID = '1405971298580041780';
 const ruoloPartecipantiID = '1405592912670232606';
-const hostRoleID = '1365390307440722082'; // sostituisci con Host reale
-const modRoleID = '1366925681782558781';   // sostituisci con Mod reale
+const hostRoleID = '1365390307440722082';
+const modRoleID = '1366925681782558781';
 
 // ===========================================
 // Quando il bot è pronto
@@ -103,7 +103,6 @@ client.on(Events.InteractionCreate, async interaction => {
     const roundName = interaction.options.getString('round');
     const deadlineInput = interaction.options.getString('deadline');
 
-    // Parse input in EST
     const deadlineDate = moment.tz(deadlineInput, "YYYY-MM-DD HH:mm", "America/New_York");
 
     if (!deadlineDate.isValid()) {
@@ -111,7 +110,6 @@ client.on(Events.InteractionCreate, async interaction => {
       return;
     }
 
-    // Salva in UTC
     rounds.push({ roundName, deadline: deadlineDate.toDate().toISOString() });
     fs.writeFileSync(roundsFile, JSON.stringify(rounds, null, 2));
 
@@ -139,12 +137,34 @@ client.on(Events.InteractionCreate, async interaction => {
       return;
     }
 
-    // Pick random and remove from array
     const index = Math.floor(Math.random() * themes.length);
     const chosenTheme = themes.splice(index, 1)[0];
     fs.writeFileSync(themesFile, JSON.stringify(themes, null, 2));
 
     await interaction.reply(`🎉 Random theme selected: **${chosenTheme}**`);
+  }
+
+  // /rules
+  if (interaction.commandName === 'rules') {
+    const rulesEmbed = new EmbedBuilder()
+      .setColor(0x1abc9c)
+      .setTitle('📜 Server Rules')
+      .setDescription('Here are the main rules to follow on our server:')
+      .addFields(
+        { name: '1️⃣ Rule', value: 'Please do not ask or beg to join the comp. There is an application channel for a reason!' },
+        { name: '2️⃣ Rule', value: 'Please no leaving once you join. Dedication is expected throughout the contest.' },
+        { name: '3️⃣ Rule', value: 'Do not spoil or leak if you got in the cast during reveal period.' },
+        { name: '4️⃣ Rule', value: 'No asking opinions on fits before submission. Creativity is key!' },
+        { name: '5️⃣ Rule', value: 'Be civil. Resolve disagreements calmly, or take them to DMs.' },
+        { name: '6️⃣ Rule', value: 'Do not copy outfits from Pinterest or other creators, including your own previous entries.' },
+        { name: '7️⃣ Rule', value: 'Do not ask others to edit your fits. Send raw images if you cannot edit.' },
+        { name: '8️⃣ Rule', value: 'No resubmissions unless requested by the hosts.' },
+        { name: '9️⃣ Rule', value: 'Respect deadlines to ensure smooth flow of the contest.' }
+      )
+      .setFooter({ text: 'Have fun and enjoy the community! 🎉' })
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [rulesEmbed] });
   }
 });
 
@@ -159,7 +179,6 @@ function startDeadlineCheck() {
     for (const round of rounds) {
       const diff = new Date(round.deadline) - now;
 
-      // Reminder 24 ore prima
       if (diff <= 24*60*60*1000 && diff > 23.5*60*60*1000) {
         const guild = client.guilds.cache.get(guildID);
         if (!guild) continue;
@@ -168,7 +187,6 @@ function startDeadlineCheck() {
         if (!channel) continue;
 
         const roleMembers = guild.roles.cache.get(ruoloPartecipantiID).members;
-
         const messages = await channel.messages.fetch({ limit: 9 });
 
         const membersWithoutSubmission = roleMembers.filter(member => {
@@ -178,7 +196,7 @@ function startDeadlineCheck() {
         let msg = `<@&${ruoloPartecipantiID}> ⚠️ Only 24 hours left for **${round.roundName}**!`;
         if (membersWithoutSubmission.size > 0) {
           const mentions = membersWithoutSubmission.map(m => `<@${m.id}>`).join(' ');
-          msg += `\nThese members havent submitted yet: ${mentions}`;
+          msg += `\nThese members haven't submitted yet: ${mentions}`;
         }
 
         channel.send(msg);
@@ -200,3 +218,4 @@ http.createServer((req, res) => {
 }).listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
+
