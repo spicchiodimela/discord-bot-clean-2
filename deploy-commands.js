@@ -1,12 +1,5 @@
 require('dotenv').config();
 const { REST, Routes, SlashCommandBuilder } = require('discord.js');
-const fs = require('fs');
-
-// Legge round già salvati se esiste il file
-let rounds = [];
-if (fs.existsSync('./rounds.json')) {
-  rounds = JSON.parse(fs.readFileSync('./rounds.json', 'utf-8'));
-}
 
 // Comandi del bot
 const commands = [
@@ -24,15 +17,15 @@ const commands = [
     .setDescription('Set a deadline')
     .addStringOption(option =>
       option.setName('round')
-        .setDescription('Round's name')
+        .setDescription('Round name')
         .setRequired(true))
     .addStringOption(option =>
       option.setName('deadline')
-        .setDescription('Deadline date (YYYY-MM-DD HH:MM, UTC)')
+        .setDescription('Deadline date (formato: YYYY-MM-DD HH:MM, UTC)')
         .setRequired(true))
 ].map(cmd => cmd.toJSON());
 
-// Setup REST per registrare comandi
+// Setup REST per registrare i comandi
 const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
 
 (async () => {

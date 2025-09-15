@@ -102,7 +102,7 @@ client.on(Events.InteractionCreate, async interaction => {
     const deadlineDate = new Date(deadlineInput);
 
     if (isNaN(deadlineDate)) {
-      await interaction.reply('Formato data non valido. Usa YYYY-MM-DD HH:MM');
+      await interaction.reply('❌ Formato data non valido.\nUsa il formato **YYYY-MM-DDTHH:MM** (esempio: 2025-09-16T12:00)');
       return;
     }
 
@@ -136,8 +136,8 @@ function startDeadlineCheck() {
 
         const roleMembers = guild.roles.cache.get(ruoloPartecipantiID).members;
 
-        // Recupera ultimi 9 messaggi dal canale
-        const messages = await channel.messages.fetch({ limit: 9 });
+        // Recupera ultimi 100 messaggi dal canale
+        const messages = await channel.messages.fetch({ limit: 100 });
 
         // Filtra chi non ha inviato
         const membersWithoutSubmission = roleMembers.filter(member => {
@@ -145,10 +145,10 @@ function startDeadlineCheck() {
         });
 
         // Prepara il messaggio
-        let msg = `<@&${ruoloPartecipantiID}> ⚠️ 24 hours left! ${round.roundName}!`;
+        let msg = `<@&${1405592912670232606}> ⚠️ 24 hours left! ${round.roundName}!`;
         if (membersWithoutSubmission.size > 0) {
           const mentions = membersWithoutSubmission.map(m => `<@${m.id}>`).join(' ');
-          msg += `\nHaven't submitted yet: ${mentions}`;
+          msg += `\nHavent submitted yet: ${mentions}`;
         }
 
         channel.send(msg);
@@ -170,3 +170,4 @@ http.createServer((req, res) => {
 }).listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
+
